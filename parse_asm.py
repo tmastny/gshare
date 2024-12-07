@@ -10,15 +10,20 @@ BRANCH_INSTRUCTIONS = {
 }
 
 def parse_instruction(line):
-    # Example line: ls[0x100003962] <+16>: jne    0x100007554
-    match = re.match(r'.*\[(0x[0-9a-f]+)\].*:\s+(\w+)\s+(.*)', line)
+    # Match new format: address instruction operands
+    # Example: 0000000100004688 pushq %rbp
+    match = re.match(r'([0-9a-f]+)\s+(\w+)\s+(.*)', line)
     if match:
-        addr = match.group(1)
+        addr = hex(int(match.group(1), 16))  # Convert to hex string with 0x prefix
         instruction = match.group(2)
-        operands = match.group(3)
+        operands = match.group(3).strip()
         
         if instruction in BRANCH_INSTRUCTIONS:
+            # For branch instructions, extract target address from operands
+            # Note: May need to adjust based on exact format of branch targets
             target_addr = operands.split()[0]
+            if not target_addr.startswith('0x'):
+                target_addr = hex(int(target_addr, 16))
             return {
                 'address': addr,
                 'instruction': instruction,
@@ -26,12 +31,21 @@ def parse_instruction(line):
             }
     return None
 
-def main():
+def parse_asm():
     # Read from stdin
+    branches = []
     for line in sys.stdin:
+        # Skip section headers and function names
+        if line.startswith('_') or line.startswith('(') or not line.strip():
+            continue
+            
         branch = parse_instruction(line)
         if branch:
-            print(f"{branch}")
+            branches.append(branch)
+
+    return branches
 
 if __name__ == "__main__":
-    main()
+    branches = parse_asm()
+    for branch in branches:
+            print(f"{branch}")

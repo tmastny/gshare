@@ -1,0 +1,5 @@
+p/x $rip              
+register read rflags 
+si                   
+p/x $rip             
+continue             
