@@ -10,12 +10,22 @@ def concat(pc, history):
     return (pc << 3) | history
 
 class BrandPredictionTable:
-    def __init__(self, hash, size):
+    def __init__(self, hash, size, method="2bit"):
         self.bitmask = (1 << size) - 1
 
+        self.method = method
         self.hash = hash
         self.table = {}
         self.history = 0
+
+    def counter(self, taken, prediction):
+        if self.method == "2bit":
+            if taken:
+                return min(3, prediction + 1)
+            else:
+                return max(0, prediction - 1)
+        elif self.method == "1bit":
+            return taken
 
     def update(self, addr, taken):
         addr &= self.bitmask
@@ -24,15 +34,11 @@ class BrandPredictionTable:
         key = self.hash(addr, history)
 
         prediction = self.table.get(key, 1)
-        if taken:
-            new_prediction = min(3, prediction + 1)
-        else:
-            new_prediction = max(0, prediction - 1)
 
-        self.table[key] = new_prediction
+        self.table[key] = self.counter(taken, prediction)
         self.history = (self.history << 1) | taken
 
-        return prediction
+        return prediction >= 2 if self.method == "2bit" else prediction
 
 
 def predict(branch_history, func):
@@ -61,7 +67,7 @@ if __name__ == "__main__":
 
         correct = 0
         for p in output:
-            if p["taken"] == (p["prediction"] > 1):
+            if p["taken"] == p["prediction"]:
                 correct += 1
 
         print(f"Accuracy: {correct / len(output)}")
