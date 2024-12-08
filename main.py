@@ -1,6 +1,18 @@
 import sys
-from branch_sequences import generate_branch_sequences, hash_concat, hash_gshare, print_key_table, analyze_aliases, print_alias_analysis
-from predictions import simulate_prediction, print_prediction_trace, print_prediction_accuracy
+from branch_sequences import (
+    generate_branch_sequences,
+    hash_concat,
+    hash_gshare,
+    print_key_table,
+    analyze_aliases,
+    print_alias_analysis,
+)
+from predictions import (
+    simulate_prediction,
+    print_prediction_trace,
+    print_prediction_accuracy,
+)
+
 
 def run_4bit_history_analysis():
     # Test parameters
@@ -44,16 +56,22 @@ def run_4bit_history_analysis():
     print_prediction_trace(results_2bit, num_to_print=10)
     print_prediction_accuracy(results_2bit)
 
+
 def run_multi_branch_analysis():
     branch_patterns = {"0011": "1100", "1100": "0011"}
 
     print("\nMulti-Branch Pattern Analysis")
     print("=" * 50)
 
-    schemes = {"concat": {"func": hash_concat, "data": []}, "gshare": {"func": hash_gshare, "data": []}}
+    schemes = {
+        "concat": {"func": hash_concat, "data": []},
+        "gshare": {"func": hash_gshare, "data": []},
+    }
     for scheme in schemes.values():
         for addr, pattern in branch_patterns.items():
-            scheme["data"].extend(generate_branch_sequences(addr, pattern, scheme["func"]))
+            scheme["data"].extend(
+                generate_branch_sequences(addr, pattern, scheme["func"])
+            )
 
     print("\nConcatenation Scheme:")
     print_key_table(schemes["concat"]["data"])
@@ -70,22 +88,25 @@ def run_multi_branch_analysis():
     print_prediction_trace(results, num_to_print=20)
     print_prediction_accuracy(results)
 
+
 if __name__ == "__main__":
     # Pattern where gshare performs better
-    with open('gshare-better.txt', 'w') as f:
+    with open("gshare-better.txt", "w") as f:
         original_stdout = sys.stdout
         sys.stdout = f
         try:
             pattern = "1101"
             print(f"Pattern where gshare performs better: {pattern}")
-            print("This pattern has different predictions needed for the same history bits")
+            print(
+                "This pattern has different predictions needed for the same history bits"
+            )
             print("Gshare can handle this by XORing with the address\n")
             run_4bit_history_analysis()
         finally:
             sys.stdout = original_stdout
 
     # Pattern where gshare performs worse or the same
-    with open('gshare-worse.txt', 'w') as f:
+    with open("gshare-worse.txt", "w") as f:
         original_stdout = sys.stdout
         sys.stdout = f
         try:
