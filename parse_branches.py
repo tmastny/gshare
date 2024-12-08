@@ -58,7 +58,7 @@ def parse_branches(asm: list[str]):
 
 
 if __name__ == "__main__":
-    # tree.asm
+    # otool -tv /usr/local/bin/tree
     asm = sys.stdin.readlines()
     branches = parse_branches(asm)
 
