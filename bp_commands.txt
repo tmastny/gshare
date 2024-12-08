@@ -1,5 +1,3 @@
-p/x $rip
+p/x $pc
 register read rflags
-si
-p/x $rip
 continue

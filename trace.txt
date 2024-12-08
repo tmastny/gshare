@@ -1,1 +1,63 @@
-['lldb', '-b', '-o', 'target create /usr/local/bin/tree', '-o', 'breakpoint set --name main', '-o', 'run', '-o', 'breakpoint set -a 0x100007f09', '-o', 'breakpoint set -a 0x100006685', '-o', 'breakpoint list', '-o', "breakpoint command add -o 'command source -c FALSE bp_commands.txt'", '-o', 'continue']
+['lldb', '-b', '-o', 'target create /usr/local/bin/tree', '-o', 'breakpoint set --name main', '-o', 'run', '-o', 'breakpoint set -a 0x100007f09', '-o', 'breakpoint set -a 0x100006685', '-o', 'breakpoint list', '-o', "breakpoint command add -o 'command source bp_commands.txt'", '-o', 'continue']
+(lldb) target create /usr/local/bin/tree
+Current executable set to '/usr/local/bin/tree' (x86_64).
+(lldb) breakpoint set --name main
+Breakpoint 1: where = tree`main, address = 0x0000000100004e08
+(lldb) run
+Process 15004 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+    frame #0: 0x0000000100004e08 tree`main
+tree`main:
+->  0x100004e08 <+0>: pushq  %rbp
+    0x100004e09 <+1>: pushq  %r15
+    0x100004e0b <+3>: pushq  %r14
+    0x100004e0d <+5>: pushq  %r13
+Target 0: (tree) stopped.
+Process 15004 launched: '/usr/local/bin/tree' (x86_64)
+(lldb) breakpoint set -a 0x100007f09
+Breakpoint 2: where = tree`emit_tree + 66, address = 0x0000000100007f09
+(lldb) breakpoint set -a 0x100006685
+Breakpoint 3: where = tree`xmalloc + 9, address = 0x0000000100006685
+(lldb) breakpoint list
+Current breakpoints:
+1: name = 'main', locations = 1, resolved = 1, hit count = 1
+  1.1: where = tree`main, address = 0x0000000100004e08, resolved, hit count = 1 
+
+2: address = tree[0x0000000100007f09], locations = 1, resolved = 1, hit count = 0
+  2.1: where = tree`emit_tree + 66, address = 0x0000000100007f09, resolved, hit count = 0 
+
+3: address = tree[0x0000000100006685], locations = 1, resolved = 1, hit count = 0
+  3.1: where = tree`xmalloc + 9, address = 0x0000000100006685, resolved, hit count = 0 
+
+(lldb) breakpoint command add -o 'command source bp_commands.txt'
+(lldb) continue
+Executing commands in '/Users/tim/tmastny/gshare/bp_commands.txt'.
+(lldb) register read rflags
+  rflags = 0x0000000000000206
+(lldb) continue
+Process 15004 resuming
+(lldb)  command source bp_commands.txt
+Executing commands in '/Users/tim/tmastny/gshare/bp_commands.txt'.
+(lldb) register read rflags
+  rflags = 0x0000000000000206
+(lldb) continue
+Process 15004 resuming
+(lldb)  command source bp_commands.txt
+Executing commands in '/Users/tim/tmastny/gshare/bp_commands.txt'.
+(lldb) register read rflags
+  rflags = 0x0000000000000202
+(lldb) continue
+Process 15004 resuming
+(lldb)  command source bp_commands.txt
+Process 15004 resuming
+Process 15004 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 2.1
+    frame #0: 0x0000000100007f09 tree`emit_tree + 66
+tree`emit_tree:
+->  0x100007f09 <+66>: je     0x100008281               ; <+954>
+    0x100007f0f <+72>: leaq   0x98(%rsp), %r13
+    0x100007f17 <+80>: leaq   0xcb42(%rip), %r12        ; realbasepath
+    0x100007f1e <+87>: xorl   %r15d, %r15d
+Target 0: (tree) stopped.
+
+defaultdict(<class 'list'>, {})
