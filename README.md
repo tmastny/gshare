@@ -9,7 +9,7 @@ otool -tv /usr/local/bin/tree > tree.asm
 cat tree.asm | ./parse_asm.py > parse_asm.txt
 cat tree.asm | ./trace_branch.py
 ```
-
+  
 ```
 lldb -b -s commands.lldb > lldb.txt
 ```

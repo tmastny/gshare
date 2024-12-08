@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import re
+import json
 
 # All conditional branch instructions we care about
 BRANCH_INSTRUCTIONS = {
@@ -24,28 +25,27 @@ def parse_instruction(line):
             target_addr = operands.split()[0]
             if not target_addr.startswith('0x'):
                 target_addr = hex(int(target_addr, 16))
-            return {
-                'address': addr,
+            return (addr, {
                 'instruction': instruction,
                 'target': target_addr
-            }
-    return None
+            })
+    return None, None
 
-def parse_asm():
-    # Read from stdin
-    branches = []
-    for line in sys.stdin:
+def parse_branches(asm: list[str]):
+    branches = {}
+    for line in asm:
         # Skip section headers and function names
         if line.startswith('_') or line.startswith('(') or not line.strip():
             continue
             
-        branch = parse_instruction(line)
-        if branch:
-            branches.append(branch)
+        addr, data = parse_instruction(line)
+        if addr:
+            branches[addr] = data
 
     return branches
 
 if __name__ == "__main__":
-    branches = parse_asm()
-    for branch in branches:
-            print(f"{branch}")
+    asm = sys.stdin.readlines()
+    branches = parse_branches(asm)
+    
+    json.dump(branches, sys.stdout, indent=2)

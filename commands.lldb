@@ -3,6 +3,5 @@ breakpoint set --name main
 run
 breakpoint set -a 0x100007f09
 breakpoint set -a 0x100006685
-breakpoint list
 command script import commands.py
 continue
