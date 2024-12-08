@@ -1,7 +1,0 @@
-target create /usr/local/bin/tree
-breakpoint set --name main
-run
-breakpoint set --address 0x100006685
-breakpoint set --address 0x100007f09
-command script import lldb_init.py
-continue
