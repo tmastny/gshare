@@ -2,6 +2,7 @@
 import sys
 import json
 
+
 def parse_lldb_output(output):
     logs = []
     for line in output:
