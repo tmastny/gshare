@@ -58,7 +58,9 @@ def parse_branches(asm: list[str]):
 
 
 if __name__ == "__main__":
+    # tree.asm
     asm = sys.stdin.readlines()
     branches = parse_branches(asm)
 
+    # parse_branches.json
     json.dump(branches, sys.stdout, indent=2)

@@ -2,7 +2,7 @@
 import subprocess
 import sys
 from parse_branches import parse_branches
-from trace import trace
+from .trace import trace
 
 
 def generate_commands_lldb(branches):
