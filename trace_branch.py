@@ -37,6 +37,7 @@ def parse_lldb_output(output):
 
 def run_lldb_commands(commands):
     cmd = ['lldb', '-b'] + sum([['-o', cmd] for cmd in commands], [])
+    print(cmd)
     output = subprocess.check_output(cmd, text=True)
     return output
 
@@ -52,7 +53,7 @@ def analyze_branches(binary_path, branch_points):
 
     commands.extend([
         "breakpoint list",
-        "breakpoint command add -o 'command source bp_commands.txt'",
+        "breakpoint command add -o 'command source -c FALSE bp_commands.txt'",
         "continue"
     ])
 
@@ -66,5 +67,6 @@ def main(branches):
     print(outcomes)
     
 if __name__ == "__main__":
+    # branches = parse_asm('tree.asm')
     branches = [{'address': '0x100007f09', 'instruction': 'je', 'target': '0x100008281'}]
     main(branches)
