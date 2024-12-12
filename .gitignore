@@ -12,3 +12,6 @@ wheels/
 *.txt
 *.json
 .DS_Store
+*.html
+*.trace
+*.xml
