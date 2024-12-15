@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import sys
 
 from operator import xor
 
@@ -57,12 +56,12 @@ def predict(branch_history, func):
     return predictions
 
 if __name__ == "__main__":
-    with open("history.json", "r") as f:
+    with open("branch_data.json", "r") as f:
         branch_history = json.load(f)
 
-    hashes = [xor, concat]
+    hashes = {"gshare": xor, "concat": concat}
 
-    for func in hashes:
+    for name, func in hashes.items():
         output = predict(branch_history, func)
 
         correct = 0
@@ -70,6 +69,4 @@ if __name__ == "__main__":
             if p["taken"] == p["prediction"]:
                 correct += 1
 
-        print(f"Accuracy: {correct / len(output)}")
-
-    # json.dump(output, sys.stdout, indent=2)
+        print(f"{name} accuracy: {correct / len(output)}")
