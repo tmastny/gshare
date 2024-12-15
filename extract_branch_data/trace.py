@@ -6,7 +6,7 @@ import json
 def parse_lldb_output(output):
     logs = []
     for line in output:
-        if "(unsigned long) $" in line and "0x" in line:
+        if "(unsigned long) 0x" in line:
             str_hex = "0x" + line.split("0x")[1].strip()
             pc = hex(int(str_hex, 16))
             logs.append(pc)
