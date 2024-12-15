@@ -1,11 +1,12 @@
 import lldb
 
+
 def check_breakpoints(debugger, command, result, internal_dict):
     # Create target to load the module
     target = debugger.CreateTarget("/usr/local/bin/tree")
 
     # Create raw address breakpoint
-    raw_bp = target.BreakpointCreateByAddress(0x100007f09)
+    raw_bp = target.BreakpointCreateByAddress(0x100007F09)
     raw_loc = raw_bp.GetLocationAtIndex(0)
     raw_addr = raw_loc.GetAddress()
 
@@ -15,7 +16,7 @@ def check_breakpoints(debugger, command, result, internal_dict):
 
     # Create SBAddress with section context
     # addr = lldb.SBAddress(text_section, 0x100007f09)
-    addr = lldb.SBAddress(0x100007f09, target)
+    addr = lldb.SBAddress(0x100007F09, target)
     module_bp = target.BreakpointCreateBySBAddress(addr)
     module_loc = module_bp.GetLocationAtIndex(0)
     module_addr = module_loc.GetAddress()
@@ -61,4 +62,6 @@ def check_breakpoints(debugger, command, result, internal_dict):
 
 
 def __lldb_init_module(debugger, internal_dict):
-    debugger.HandleCommand('command script add -f check_bps.check_breakpoints check_bps')
+    debugger.HandleCommand(
+        "command script add -f check_bps.check_breakpoints check_bps"
+    )

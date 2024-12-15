@@ -3,10 +3,12 @@ import json
 
 from operator import xor
 
+
 def concat(pc, history):
     pc &= 0x7F
     history &= 0x7
     return (pc << 3) | history
+
 
 class BrandPredictionTable:
     def __init__(self, hash, size, method="2bit"):
@@ -47,13 +49,10 @@ def predict(branch_history, func):
         [(addr, taken)] = instruction.items()
         prediction = bpt.update(int(addr, 16), taken)
 
-        predictions.append({
-            "address": addr,
-            "taken": taken,
-            "prediction": prediction
-        })
+        predictions.append({"address": addr, "taken": taken, "prediction": prediction})
 
     return predictions
+
 
 if __name__ == "__main__":
     with open("branch_data.json", "r") as f:
