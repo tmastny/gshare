@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import sys
 
 from operator import xor
 
@@ -42,9 +43,9 @@ class BrandPredictionTable:
         return prediction >= 2 if self.method == "2bit" else prediction
 
 
-def predict(branch_history, func):
+def predict(branch_history, func, size=10, method="2bit"):
     predictions = []
-    bpt = BrandPredictionTable(func, 10)
+    bpt = BrandPredictionTable(func, size, method)
     for instruction in branch_history:
         [(addr, taken)] = instruction.items()
         prediction = bpt.update(int(addr, 16), taken)
@@ -55,8 +56,15 @@ def predict(branch_history, func):
 
 
 if __name__ == "__main__":
-    with open("branch_data.json", "r") as f:
-        branch_history = json.load(f)
+    file_name = sys.argv[1]
+    with open(file_name, "r") as f:
+        branch_data = json.load(f)
+
+    binary = branch_data["binary"]
+    branch_history = branch_data["branch_history"]
+
+    print("--------------------------------")
+    print(f"Predicting branches in {binary}")
 
     hashes = {"gshare": xor, "concat": concat}
 

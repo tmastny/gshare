@@ -1,6 +1,6 @@
-target create /usr/local/bin/tree
+target create {binary}
 breakpoint set --name main
-run
-{}
+run {arguments}
+{breakpoints}
 command script import lldb_init.py
 continue
