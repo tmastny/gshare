@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 import json
-import sys
+import argparse
 
 from operator import xor
 
 
-def concat(pc, history):
-    pc &= 0x7F
-    history &= 0x7
-    return (pc << 3) | history
+def make_concat(size):
+    history_bits = size // 2
+    pc_bits = size - history_bits
+
+    def concat(pc, history):
+        pc_mask = (1 << pc_bits) - 1
+        history_mask = (1 << history_bits) - 1
+        return ((pc & pc_mask) << history_bits) | (history & history_mask)
+
+    return concat
 
 
-class BrandPredictionTable:
+class BranchPredictionTable:
     def __init__(self, hash, size, method="2bit"):
         self.bitmask = (1 << size) - 1
 
@@ -45,35 +51,58 @@ class BrandPredictionTable:
 
 def predict(branch_history, func, size=10, method="2bit"):
     predictions = []
-    bpt = BrandPredictionTable(func, size, method)
+    bpt = BranchPredictionTable(func, size, method)
     for instruction in branch_history:
         [(addr, taken)] = instruction.items()
         prediction = bpt.update(int(addr, 16), taken)
-
         predictions.append({"address": addr, "taken": taken, "prediction": prediction})
-
     return predictions
 
 
-if __name__ == "__main__":
-    file_name = sys.argv[1]
-    with open(file_name, "r") as f:
+def main():
+    parser = argparse.ArgumentParser(description="Branch Prediction Simulator")
+    parser.add_argument("branch_data", help="Path to the branch trace file")
+    parser.add_argument(
+        "--size",
+        type=int,
+        default=10,
+        help="Size of the prediction table (default: 10)",
+    )
+    parser.add_argument(
+        "--method",
+        choices=["1bit", "2bit"],
+        default="2bit",
+        help="Counter method (default: 2bit)",
+    )
+
+    args = parser.parse_args()
+
+    with open(args.branch_data, "r") as f:
         branch_data = json.load(f)
 
     binary = branch_data["binary"]
+    arguments = branch_data.get("arguments", "")
     branch_history = branch_data["branch_history"]
 
+    print("================================")
+    print(f"Program: {binary} {arguments}")
+    print(f"Table size: {args.size} bits ({2**args.size} entries)")
+    print(f"Counter method: {args.method}")
     print("--------------------------------")
-    print(f"Predicting branches in {binary}")
 
-    hashes = {"gshare": xor, "concat": concat}
+    hashes = {"gshare": xor, "concat": make_concat(args.size)}
 
+    results = []
     for name, func in hashes.items():
-        output = predict(branch_history, func)
+        output = predict(branch_history, func, size=args.size, method=args.method)
+        correct = sum(1 for p in output if p["taken"] == p["prediction"])
+        accuracy = correct / len(output)
+        results.append((name, accuracy))
 
-        correct = 0
-        for p in output:
-            if p["taken"] == p["prediction"]:
-                correct += 1
+    max_name_len = max(len(name) for name, _ in results)
+    for name, accuracy in results:
+        print(f"{name:<{max_name_len}} accuracy: {accuracy:.4f}")
 
-        print(f"{name} accuracy: {correct / len(output)}")
+
+if __name__ == "__main__":
+    main()

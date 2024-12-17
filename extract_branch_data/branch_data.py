@@ -17,10 +17,10 @@ def generate_commands_lldb(binary, arguments, branches):
         bps.append(bp_template.format(pc))
 
     with open("commands.lldb", "w") as f:
-        f.write(template.format(
-            binary=binary,
-            arguments=arguments,
-            breakpoints="\n".join(bps))
+        f.write(
+            template.format(
+                binary=binary, arguments=arguments, breakpoints="\n".join(bps)
+            )
         )
 
 
@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     binary = sys.argv[1]
     arguments = " ".join(sys.argv[2:])
-    
+
     asm = subprocess.check_output(["otool", "-tv", binary], text=True)
 
     branches = parse_branches(asm.splitlines())
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     branch_trace = trace(log.splitlines())
 
     branch_history = history(branch_trace, branches)
-    branch_data = {"binary": binary, "branch_history": branch_history}
+    branch_data = {"binary": binary, "arguments": arguments, "branch_history": branch_history}
 
     # > branch_data.json
     json.dump(branch_data, sys.stdout, indent=2)
