@@ -2,13 +2,13 @@
 import subprocess
 import sys
 import json
-from parse_branches import parse_branches
-from trace import trace
-from history import history
+from lib.parse_branches import parse_branches
+from lib.trace import trace
+from lib.history import history
 
 
 def generate_commands_lldb(binary, arguments, branches):
-    with open("commands.lldb.tmp", "r") as f:
+    with open("lib/commands.lldb.tmp", "r") as f:
         template = f.read()
 
     bps = []
@@ -16,7 +16,7 @@ def generate_commands_lldb(binary, arguments, branches):
     for pc in branches:
         bps.append(bp_template.format(pc))
 
-    with open("commands.lldb", "w") as f:
+    with open("lib/commands.lldb", "w") as f:
         f.write(
             template.format(
                 binary=binary, arguments=arguments, breakpoints="\n".join(bps)
@@ -25,12 +25,13 @@ def generate_commands_lldb(binary, arguments, branches):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
-        print("Usage: branch_data.py /path/to/binary [arguments]")
+    if len(sys.argv) < 3:
+        print("Usage: branch_data_lldb.py <output> <binary> [arguments]")
         sys.exit(1)
 
-    binary = sys.argv[1]
-    arguments = " ".join(sys.argv[2:])
+    output = sys.argv[1]
+    binary = sys.argv[2]
+    arguments = " ".join(sys.argv[3:])
 
     asm = subprocess.check_output(["otool", "-tv", binary], text=True)
 
@@ -43,12 +44,16 @@ if __name__ == "__main__":
 
     generate_commands_lldb(binary, arguments, branches)
 
-    log = subprocess.check_output(["lldb", "-b", "-s", "commands.lldb"], text=True)
+    log = subprocess.check_output(["lldb", "-b", "-s", "lib/commands.lldb"], text=True)
 
     branch_trace = trace(log.splitlines())
 
     branch_history = history(branch_trace, branches)
-    branch_data = {"binary": binary, "arguments": arguments, "branch_history": branch_history}
+    branch_data = {
+        "binary": binary,
+        "arguments": arguments,
+        "branch_history": branch_history,
+    }
 
-    # > branch_data.json
-    json.dump(branch_data, sys.stdout, indent=2)
+    with open(output, "w") as f:
+        json.dump(branch_data, f, indent=2)

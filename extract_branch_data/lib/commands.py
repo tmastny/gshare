@@ -2,8 +2,9 @@
 import lldb
 import json
 import subprocess
-from parse_branches import parse_branches
-from history import history
+import sys
+from lib.parse_branches import parse_branches
+
 
 def run_with_breakpoints(binary, arguments, branches):
     # Initialize debugger
@@ -42,34 +43,16 @@ def run_with_breakpoints(binary, arguments, branches):
         pc = frame.GetPC()
         rflags = frame.FindRegister("rflags").GetValueAsUnsigned()
 
-        branch_trace.append({
-            hex(pc): rflags
-        })
+        branch_trace.append({hex(pc): rflags})
 
         process.Continue()
 
     return branch_trace
 
-if __name__ == "__main__":
-    if len(sys.argv) < 1:
-        print("Usage: branch_data.py /path/to/binary [arguments]")
-        sys.exit(1)
 
-    binary = sys.argv[1]
-    arguments = " ".join(sys.argv[2:])
-
+def run_analysis(binary, arguments, filename):
     asm = subprocess.check_output(["otool", "-tv", binary], text=True)
     branches = parse_branches(asm.splitlines())
 
     branch_trace = run_with_breakpoints(binary, arguments, branches)
-
-    branch_history = history(branch_trace, branches)
-
-    # Output results
-    branch_data = {
-        "binary": binary,
-        "arguments": arguments,
-        "branch_history": branch_history
-    }
-
-    json.dump(branch_data, sys.stdout, indent=2)
+    json.dump(branch_trace, sys.stdout, indent=2)
