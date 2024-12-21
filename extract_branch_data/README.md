@@ -71,7 +71,7 @@ Summary:
 ./branch_data_cpp.py 83.095 ± 0.452 seconds
 ./branch_data_py.py  95.014 ± 0.460 seconds
 ./branch_data_lldb.py 98.909 ± 0.271 seconds
-```
+
 
 ### Configuration
 

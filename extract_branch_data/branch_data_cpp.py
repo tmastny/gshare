@@ -23,7 +23,7 @@ if __name__ == "__main__":
         ["./lib/commands.out", binary, *arguments],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        text=True
+        text=True,
     )
 
     # Send addresses to C++ program
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     branch_trace = []
     for line in cpp_process.stdout:
         # Assuming output format is "0xADDRESS,FLAGS"
-        pc, rflags = line.strip().split(',')
+        pc, rflags = line.strip().split(",")
         branch_trace.append({pc: int(rflags)})
 
     # Wait for C++ program to finish
@@ -49,5 +49,5 @@ if __name__ == "__main__":
         "branch_history": branch_history,
     }
 
-    with open(output, 'w') as f:
+    with open(output, "w") as f:
         json.dump(branch_data, f, indent=2)

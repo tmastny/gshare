@@ -4,11 +4,13 @@ import time
 import statistics
 import sys
 
+
 def run_command(cmd):
     start_time = time.time()
     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     end_time = time.time()
     return end_time - start_time
+
 
 def benchmark_script(script_name, binary, args, runs=5):
     times = []
@@ -25,8 +27,9 @@ def benchmark_script(script_name, binary, args, runs=5):
         "script": script_name,
         "times": times,
         "average": avg_time,
-        "std_dev": std_dev
+        "std_dev": std_dev,
     }
+
 
 def main():
     if len(sys.argv) < 2:
@@ -36,11 +39,7 @@ def main():
     binary = sys.argv[1]
     args = sys.argv[2:]
 
-    scripts = [
-        "./branch_data_cpp.py",
-        "./branch_data_py.py",
-        "./branch_data_lldb.py"
-    ]
+    scripts = ["./branch_data_cpp.py", "./branch_data_py.py", "./branch_data_lldb.py"]
 
     results = []
 
@@ -55,8 +54,11 @@ def main():
 
     print("\nSummary:")
     print("-" * 50)
-    for result in sorted(results, key=lambda x: x['average']):
-        print(f"{result['script']:<20} {result['average']:.3f} ± {result['std_dev']:.3f} seconds")
+    for result in sorted(results, key=lambda x: x["average"]):
+        print(
+            f"{result['script']:<20} {result['average']:.3f} ± {result['std_dev']:.3f} seconds"
+        )
+
 
 if __name__ == "__main__":
     main()
