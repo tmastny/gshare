@@ -33,6 +33,46 @@ xctrace record \
 python pmc-parse.py
 ```
 
+## benchmark.py
+
+```
+Starting benchmark...
+
+
+Benchmarking ./branch_data_cpp.py:
+./branch_data_cpp.py run 1: 82.561 seconds
+./branch_data_cpp.py run 2: 82.877 seconds
+./branch_data_cpp.py run 3: 82.979 seconds
+./branch_data_cpp.py run 4: 83.747 seconds
+./branch_data_cpp.py run 5: 83.311 seconds
+Average: 83.095 seconds
+Std Dev: 0.452 seconds
+
+Benchmarking ./branch_data_py.py:
+./branch_data_py.py run 1: 95.494 seconds
+./branch_data_py.py run 2: 94.985 seconds
+./branch_data_py.py run 3: 94.480 seconds
+./branch_data_py.py run 4: 94.650 seconds
+./branch_data_py.py run 5: 95.459 seconds
+Average: 95.014 seconds
+Std Dev: 0.460 seconds
+
+Benchmarking ./branch_data_lldb.py:
+./branch_data_lldb.py run 1: 98.673 seconds
+./branch_data_lldb.py run 2: 98.939 seconds
+./branch_data_lldb.py run 3: 98.967 seconds
+./branch_data_lldb.py run 4: 99.316 seconds
+./branch_data_lldb.py run 5: 98.648 seconds
+Average: 98.909 seconds
+Std Dev: 0.271 seconds
+
+Summary:
+--------------------------------------------------
+./branch_data_cpp.py 83.095 ± 0.452 seconds
+./branch_data_py.py  95.014 ± 0.460 seconds
+./branch_data_lldb.py 98.909 ± 0.271 seconds
+```
+
 ### Configuration
 
 Must install the XCode IDE: XCode command line tools are not enough.
