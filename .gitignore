@@ -17,3 +17,5 @@ wheels/
 *.xml
 *.asm
 *.bz2
+
+spectre
