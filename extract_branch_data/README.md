@@ -28,7 +28,13 @@ Example:
 xctrace record \
   --template 'bp.tracetemplate' \
   --output tree-analysis.trace \
-  --launch -- /usr/local/bin/tree /
+  --launch -- /usr/local/bin/tree .
+
+# create output
+xctrace export \
+  --input tree-analysis_pwd.trace \
+  --xpath '/trace-toc/run/data/table[@schema="counters-profile"]' \
+  --output summary.xml
 
 python pmc-parse.py
 ```

@@ -26,7 +26,11 @@ if __name__ == "__main__":
     branch_trace = json.loads(branch_trace)
 
     branch_history = history(branch_trace, branches)
-    branch_data = {"binary": binary, "arguments": arguments, "history": branch_history}
+    branch_data = {
+        "binary": binary,
+        "arguments": arguments,
+        "branch_history": branch_history,
+    }
 
     with open(output, "w") as f:
         json.dump(branch_data, f, indent=2)

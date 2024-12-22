@@ -1,3 +1,74 @@
+# additional notes on branches
+
+Getting into the shared libraries:
+
+Parsing with lldb script
+```python
+def get_all_branches(target):
+    all_branches = {}
+    for module in target.modules:
+        path = module.file.fullpath
+        try:
+            asm = subprocess.check_output(["otool", "-tv", path], text=True)
+            branches = parse_branches(asm.splitlines())
+            all_branches[path] = branches
+        except subprocess.CalledProcessError:
+            print(f"Failed to disassemble {path}")
+    return all_branches
+
+def run_analysis(binary, arguments, filename):
+    # Initialize debugger and create target as before
+    debugger = lldb.SBDebugger.Create()
+    target = debugger.CreateTarget(binary)
+
+    # Get branches from all loaded libraries
+    all_branches = get_all_branches(target)
+
+    # Set breakpoints for each library's branches
+    breakpoints = []
+    for lib_path, branches in all_branches.items():
+        for pc in branches:
+            bp = target.BreakpointCreateByAddress(int(pc, 16))
+            breakpoints.append(bp)
+
+    # Rest of your analysis code...
+```
+
+Check target address of module:
+```python
+def get_all_branches(target):
+    all_branches = {}
+    for module in target.modules:
+        path = module.file.fullpath
+        try:
+            asm = subprocess.check_output(["otool", "-tv", path], text=True)
+            branches = parse_branches(asm.splitlines())
+            all_branches[path] = branches
+        except subprocess.CalledProcessError:
+            print(f"Failed to disassemble {path}")
+    return all_branches
+
+def run_analysis(binary, arguments, filename):
+    # Initialize debugger and create target as before
+    debugger = lldb.SBDebugger.Create()
+    target = debugger.CreateTarget(binary)
+
+    # Get branches from all loaded libraries
+    all_branches = get_all_branches(target)
+
+    # Set breakpoints for each library's branches
+    breakpoints = []
+    for lib_path, branches in all_branches.items():
+        for pc in branches:
+            bp = target.BreakpointCreateByAddress(int(pc, 16))
+            breakpoints.append(bp)
+
+    # Rest of your analysis code...
+```
+
+
+
+
 # dynamic loader
 
 https://github.com/llvm/llvm-project/issues/62295#issuecomment-1521005121
