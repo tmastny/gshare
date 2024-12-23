@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simplified Spectre Attack Demo</title>
+    <style>
+        .container {
+            padding: 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.25rem;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .btn:not(:disabled):hover { background: #2563eb; }
+        .section {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            white-space: pre;
+            line-height: 1.4;
+        }
+        .highlight { background: #fef3c7; }
+        .speculative { background: #fee2e2; }
+        .grid {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+        .cell {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .bg-gray { background: #f3f4f6; }
+        .bg-green { background: #bbf7d0; }
+        .bg-red { background: #fecaca; }
+        .phase {
+            font-weight: 600;
+            color: #4b5563;
+            margin-top: 0.5rem;
+        }
+        .explanation {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <button id="fastRewindBtn" class="btn">&lt;&lt;</button>
+            <button id="backBtn" class="btn">&lt;</button>
+            <button id="forwardBtn" class="btn">&gt;</button>
+            <button id="fastForwardBtn" class="btn">&gt;&gt;</button>
+            <button id="resetBtn" class="btn">Reset</button>
+        </div>
+
+        <div class="section">
+            <div class="title">Secret Index: <span id="secretValue">0x5</span></div>
+            <div class="explanation">We're trying to leak the value at this address through cache timing</div>
+        </div>
+
+        <div class="section">
+            <div id="code" class="code">
+for (int i = 0; i < 3; i++) {
+    index = switch(i, secret_index);
+    if (index < 3) {
+        temp = array_cache[array_secret[index]];
+    }
+}</div>
+            <div id="iteration" class="explanation">Iteration: 0/3</div>
+            <div id="explanation" class="explanation">Training the branch predictor...</div>
+        </div>
+
+        <div class="section">
+            <div class="title">array_cache Cache State</div>
+            <div id="cacheGrid" class="grid"></div>
+            <div class="explanation">Shows which values are currently in cache (green = cached)</div>
+        </div>
+
+        <div class="section">
+            <div class="title">array_cache Probe</div>
+            <div id="probeGrid" class="grid"></div>
+            <div class="explanation">Number of cache hits detected for each value</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SECRET = 2;
+        const CACHE_SIZE = 8;
+        const TRAINING_CYCLES = 2;
+        const STEPS_PER_CYCLE = 3;
+
+        // State management
+        class State {
+            constructor(phase, step, cacheState, probeScores) {
+                this.phase = phase;
+                this.step = step;
+                this.cacheState = [...cacheState];
+                this.probeScores = [...probeScores];
+            }
+        }
+
+        let history = [];
+        let currentStateIndex = -1;
+
+        function createInitialState() {
+            return new State(
+                'training',
+                0,
+                new Array(CACHE_SIZE).fill(false),
+                new Array(CACHE_SIZE).fill(0)
+            );
+        }
+
+        function getCurrentState() {
+            return history[currentStateIndex];
+        }
+
+        function pushState(state) {
+            history = history.slice(0, currentStateIndex + 1);
+            history.push(new State(state.phase, state.step, state.cacheState, state.probeScores));
+            currentStateIndex = history.length - 1;
+        }
+
+        function computeNextState(current) {
+            const next = new State(
+                current.phase,
+                current.step,
+                [...current.cacheState],
+                [...current.probeScores]
+            );
+
+            if (next.phase === 'training') {
+                // Only update cache state on the last line of the last iteration
+                const iteration = Math.floor(next.step / STEPS_PER_CYCLE);
+                const stepInCycle = next.step % STEPS_PER_CYCLE;
+
+                if (iteration === 2 && stepInCycle === 2) {
+                    next.cacheState[SECRET] = true;
+                }
+
+                next.step++;
+                if (next.step >= 9) { // 3 iterations * 3 steps
+                    next.phase = 'probing';
+                    next.step = 0;
+                }
+            } else {
+                const probeValue = Math.floor(next.step / STEPS_PER_CYCLE);
+                if (next.step % STEPS_PER_CYCLE === 2 && next.cacheState[probeValue]) {
+                    next.probeScores[probeValue]++;
+                }
+
+                next.step++;
+                if (next.step >= CACHE_SIZE * STEPS_PER_CYCLE) {
+                    next.phase = 'training';
+                    next.step = 0;
+                    next.cacheState = new Array(CACHE_SIZE).fill(false);
+                }
+            }
+
+            return next;
+        }
+
+        function updateUI() {
+            const state = getCurrentState();
+
+            // Update cache state grid
+            document.getElementById('cacheGrid').innerHTML = state.cacheState
+                .map((isCached, i) => `
+                    <div class="cell ${isCached ? 'bg-green' : 'bg-red'}">
+                        ${i}
+                    </div>
+                `)
+                .join('');
+
+            // Update probe results grid with highlighting
+            const currentProbeValue = state.phase === 'probing' ?
+                Math.floor(state.step / STEPS_PER_CYCLE) : -1;
+            document.getElementById('probeGrid').innerHTML = state.probeScores
+                .map((score, i) => `
+                    <div class="cell ${i === currentProbeValue ? 'highlight' : 'bg-gray'}">
+                        ${score}
+                    </div>
+                `)
+                .join('');
+
+            document.getElementById('cacheGrid').innerHTML = state.cacheState
+                .map((isCached, i) => `
+                    <div class="cell ${isCached ? 'bg-green' : 'bg-red'}" 
+                         onclick="toggleCache(${i})" 
+                         style="cursor: pointer"
+                         title="Click to toggle cache state">
+                        ${i}
+                    </div>
+                `)
+                .join('');
+            
+            // Update explanation text
+            let explanation = '';
+            if (state.phase === 'training') {
+                const iteration = Math.floor(state.step / STEPS_PER_CYCLE);
+                if (iteration === 0) {
+                    explanation = `Training the branch predictor: index = 0`;
+                } else if (iteration === 1) {
+                    explanation = `Training the branch predictor: index = 1`;
+                } else {
+                    if (state.step % 3 === 2) {
+                        explanation = `array_cached[array_secret[0x5]] loaded into cache!`;
+                    } else {
+                        explanation = `Tricking the branch predictor: index = 0x5`;
+                    }
+                }
+            } else {
+                const probeValue = Math.floor(state.step / STEPS_PER_CYCLE);
+                explanation = `Measured if value ${probeValue} was cached`;
+            }
+            document.getElementById('explanation').textContent = explanation;
+
+            // Update code highlights
+            const code = document.getElementById('code');
+            const lines = code.textContent.split('\n');
+
+            if (state.phase === 'training') {
+                const iteration = Math.floor(state.step / STEPS_PER_CYCLE);
+                const stepInCycle = state.step % STEPS_PER_CYCLE;
+
+                document.getElementById('iteration').textContent =
+                    `Iteration: ${iteration + 1}/3`;
+
+                // Reset all highlights
+                code.innerHTML = lines.join('\n');
+
+                // Add highlight based on current step
+                if (stepInCycle === 0) {
+                    lines[2] = `<span class="highlight">${lines[2]}</span>`;
+                } else if (stepInCycle === 1) {
+                    lines[3] = `<span class="highlight">${lines[3]}</span>`;
+                } else if (stepInCycle === 2) {
+                    // On the last step of the last iteration, show speculative execution
+                    if (iteration === 2) {
+                        lines[4] = `<span class="speculative">${lines[4]}</span>`;
+                    } else {
+                        lines[4] = `<span class="highlight">${lines[4]}</span>`;
+                    }
+                }
+                code.innerHTML = lines.join('\n');
+            }
+
+            // Update button states
+            document.getElementById('fastRewindBtn').disabled = currentStateIndex <= 0;
+            document.getElementById('backBtn').disabled = currentStateIndex <= 0;
+            document.getElementById('forwardBtn').disabled = false;
+            document.getElementById('fastForwardBtn').disabled = false;
+        }
+
+        function isKeyEvent(state) {
+            // Start of each iteration in training
+            if (state.phase === 'training' && state.step % STEPS_PER_CYCLE === 0) return true;
+
+            // Speculative execution in final iteration
+            if (state.phase === 'training' &&
+                Math.floor(state.step / STEPS_PER_CYCLE) === 2 &&
+                state.step % STEPS_PER_CYCLE === 2) return true;
+
+            // Start of probing
+            if (state.phase === 'probing' && state.step === 0) return true;
+
+            // Cache hits during probing
+            if (state.phase === 'probing' && state.step % STEPS_PER_CYCLE === 2) {
+                const probeValue = Math.floor(state.step / STEPS_PER_CYCLE);
+                if (state.cacheState[probeValue]) return true;
+            }
+
+            // End of probing
+            if (state.phase === 'training' && state.step === 0 && currentStateIndex > 0) return true;
+
+            return false;
+        }
+
+        function findNextKeyEvent() {
+            let searchIndex = currentStateIndex + 1;
+            while (searchIndex < history.length) {
+                if (isKeyEvent(history[searchIndex])) return searchIndex;
+                searchIndex++;
+            }
+
+            // If no key event found in history, generate new states until we find one
+            let currentState = getCurrentState();
+            while (!isKeyEvent(currentState = computeNextState(currentState))) {
+                pushState(currentState);
+            }
+            pushState(currentState);
+            return history.length - 1;
+        }
+
+        function findPreviousKeyEvent() {
+            let searchIndex = currentStateIndex - 1;
+            while (searchIndex >= 0) {
+                if (isKeyEvent(history[searchIndex])) return searchIndex;
+                searchIndex--;
+            }
+            return 0;
+        }
+
+        function forward() {
+            if (currentStateIndex < history.length - 1) {
+                // If in probing phase, skip to next probe value
+                const state = history[currentStateIndex];
+                if (state.phase === 'probing') {
+                    const currentProbe = Math.floor(state.step / STEPS_PER_CYCLE);
+                    const nextProbe = currentProbe + 1;
+                    let targetIndex = currentStateIndex + 1;
+
+                    // Find the state for the next probe value
+                    while (targetIndex < history.length) {
+                        const nextState = history[targetIndex];
+                        if (nextState.phase !== 'probing' ||
+                            Math.floor(nextState.step / STEPS_PER_CYCLE) >= nextProbe) {
+                            break;
+                        }
+                        targetIndex++;
+                    }
+                    currentStateIndex = targetIndex;
+                } else {
+                    currentStateIndex++;
+                }
+            } else {
+                // Generate next state(s)
+                const currentState = getCurrentState();
+                if (currentState.phase === 'probing') {
+                    // Skip to next probe value
+                    const currentProbe = Math.floor(currentState.step / STEPS_PER_CYCLE);
+                    const nextProbe = currentProbe + 1;
+                    let nextState = computeNextState(currentState);
+                    pushState(nextState);
+
+                    while (nextState.phase === 'probing' &&
+                           Math.floor(nextState.step / STEPS_PER_CYCLE) < nextProbe) {
+                        nextState = computeNextState(nextState);
+                        pushState(nextState);
+                    }
+                } else {
+                    pushState(computeNextState(currentState));
+                }
+            }
+            updateUI();
+        }
+
+        function back() {
+            if (currentStateIndex > 0) {
+                const state = getCurrentState();
+                if (state.phase === 'probing') {
+                    // Skip back to previous probe value
+                    const currentProbe = Math.floor(state.step / STEPS_PER_CYCLE);
+                    let targetIndex = currentStateIndex - 1;
+
+                    while (targetIndex >= 0) {
+                        const prevState = history[targetIndex];
+                        if (prevState.phase !== 'probing' ||
+                            Math.floor(prevState.step / STEPS_PER_CYCLE) < currentProbe) {
+                            break;
+                        }
+                        targetIndex--;
+                    }
+                    currentStateIndex = targetIndex;
+                } else {
+                    currentStateIndex--;
+                }
+                updateUI();
+            }
+        }
+
+        function fastForward() {
+            const nextEventIndex = findNextKeyEvent();
+            currentStateIndex = nextEventIndex;
+            updateUI();
+        }
+
+        function fastRewind() {
+            const prevEventIndex = findPreviousKeyEvent();
+            currentStateIndex = prevEventIndex;
+            updateUI();
+        }
+
+        function reset() {
+            history = [createInitialState()];
+            currentStateIndex = 0;
+            updateUI();
+        }
+        
+        function toggleCache(index) {
+            const state = getCurrentState();
+            state.cacheState[index] = !state.cacheState[index];
+            updateUI();
+        }
+
+        // Event Listeners
+        document.getElementById('fastRewindBtn').addEventListener('click', fastRewind);
+        document.getElementById('backBtn').addEventListener('click', back);
+        document.getElementById('forwardBtn').addEventListener('click', forward);
+        document.getElementById('fastForwardBtn').addEventListener('click', fastForward);
+        document.getElementById('resetBtn').addEventListener('click', reset);
+       
+        reset();
+    </script>
+</body>
+</html>

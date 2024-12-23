@@ -1,5 +1,6 @@
 # spectre
 
+```
 Cached Threshold: 80
 Reading 31 bytes:
 Reading at malicious_x = 0xffffffffffffbed8: Unclear: 0x00='?' score=987 (second best: 0x54 score=983)
@@ -33,3 +34,4 @@ Reading at malicious_x = 0xffffffffffffbef3: Unclear: 0x74='t' score=999 (second
 Reading at malicious_x = 0xffffffffffffbef4: Unclear: 0x00='?' score=1000 (second best: 0x31 score=999)
 Reading at malicious_x = 0xffffffffffffbef5: Unclear: 0x00='?' score=999 (second best: 0x32 score=997)
 Reading at malicious_x = 0xffffffffffffbef6: Unclear: 0x33='3' score=998 (second best: 0x00 score=996)
+```
