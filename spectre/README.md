@@ -1,5 +1,7 @@
 # spectre
 
+`index.html`: interactive visualization of the Spectre v1 attack.
+
 ```
 Cached Threshold: 80
 Reading 31 bytes:
