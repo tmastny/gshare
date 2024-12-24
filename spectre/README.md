@@ -1,6 +1,14 @@
 # spectre
 
-`index.html`: interactive visualization of the Spectre v1 attack.
+`spectrev1.c`
+* Spectre v1 demostration on x86 architecture.
+* Adapted from Specture paper: https://spectreattack.com/spectre.pdf
+* build with `make`
+
+`index.html`
+* interactive visualization of the Spectre v1 attack.
+
+Example output from `./spectre`:
 
 ```
 Cached Threshold: 80
