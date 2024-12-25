@@ -1,3 +1,7 @@
+# lib
+
+frida: https://frida.re
+
 # additional notes on branches
 
 Getting into the shared libraries:
