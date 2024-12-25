@@ -85,10 +85,9 @@ def get_section_instructions(debugger, target, section) -> Dict:
             "instructions": []
         }
 
-    # Convert instructions to serializable format
+    # Convert instructions to serializable format using iterator
     instruction_list = []
-    for i in range(instructions.GetSize()):
-        inst = instructions.GetInstructionAtIndex(i)
+    for inst in instructions:
         addr = inst.GetAddress()
 
         # Get numeric address
