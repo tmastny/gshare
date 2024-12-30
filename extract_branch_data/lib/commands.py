@@ -50,9 +50,15 @@ def run_with_breakpoints(binary, arguments, branches):
     return branch_trace
 
 
-def run_analysis(binary, arguments, filename):
+def run_analysis(binary, arguments, filename, shlib=False):
     asm = subprocess.check_output(["otool", "-tv", binary], text=True)
     branches = parse_branches(asm.splitlines())
+
+    if shlib:
+        with open("lldb_disassemble/branch_instructions.json", "r") as f:
+            shared_lib_branches = json.load(f)
+
+        branches.update(shared_lib_branches)
 
     branch_trace = run_with_breakpoints(binary, arguments, branches)
     json.dump(branch_trace, sys.stdout, indent=2)

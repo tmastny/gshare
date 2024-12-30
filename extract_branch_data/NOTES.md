@@ -1,3 +1,13 @@
+# missing branches
+
+11603 condition branches in user program.
+
+Traced 163,697 branches in instruments.
+
+User program took about 95 seconds to run.
+
+Optimistically, might take 4.5 hours to trace all branches.
+
 # lib
 
 frida: https://frida.re
