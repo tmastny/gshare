@@ -1,3 +1,8 @@
+# error 9
+
+Failure to break: try creating the target, 
+running, then setting breakpionts, then running again.
+
 # missing branches
 
 11603 condition branches in user program.
